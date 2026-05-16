@@ -1,0 +1,37 @@
+# Phase 18: Redis Cluster — 6 nodes (3 masters + 3 replicas), 16384 hash slots.
+# Run separately from base file:
+#   docker compose -f docker-compose.cluster.yml up -d
+#   # Then form the cluster:
+#   docker exec -it cl-node-1 redis-cli --cluster create \
+#     cl-node-1:6379 cl-node-2:6379 cl-node-3:6379 \
+#     cl-node-4:6379 cl-node-5:6379 cl-node-6:6379 \
+#     --cluster-replicas 1 --cluster-yes
+#   # Connect with -c (cluster mode) so MOVED redirects are followed:
+#   docker exec -it cl-node-1 redis-cli -c -p 6379
+
+x-cluster-node: &node
+  image: redis:7-alpine
+  command:
+    - redis-server
+    - --port
+    - "6379"
+    - --cluster-enabled
+    - "yes"
+    - --cluster-node-timeout
+    - "5000"
+    - --appendonly
+    - "yes"
+    - --protected-mode
+    - "no"
+  networks: [cluster]
+
+services:
+  cl-node-1: { <<: *node, container_name: cl-node-1, ports: ["7001:6379", "17001:16379"] }
+  cl-node-2: { <<: *node, container_name: cl-node-2, ports: ["7002:6379", "17002:16379"] }
+  cl-node-3: { <<: *node, container_name: cl-node-3, ports: ["7003:6379", "17003:16379"] }
+  cl-node-4: { <<: *node, container_name: cl-node-4, ports: ["7004:6379", "17004:16379"] }
+  cl-node-5: { <<: *node, container_name: cl-node-5, ports: ["7005:6379", "17005:16379"] }
+  cl-node-6: { <<: *node, container_name: cl-node-6, ports: ["7006:6379", "17006:16379"] }
+
+networks:
+  cluster:

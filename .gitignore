@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+*.log
+.DS_Store
+.angular/
+.idea/
+.vscode/
+coverage/
+tmp/
+*.tsbuildinfo

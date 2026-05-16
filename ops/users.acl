@@ -1,0 +1,13 @@
+# Phase 18: ACL example. Apply with:  redis-server --aclfile /etc/users.acl
+#
+# Three roles for our app:
+#   - bidder:  read auctions, place bids (no DEBUG, no FLUSHDB, no CONFIG)
+#   - worker:  read+write everything except admin
+#   - admin:   superuser
+#
+# Passwords below are example hashes (>echo -n "secret" | sha256sum<). Replace.
+
+user default off
+user bidder on  >bidder_password  ~auction:*  ~bids:*  ~bid:*  ~ch:*  +get +hgetall +zadd +zrevrange +publish +subscribe +psubscribe
+user worker on  >worker_password  ~*  +@all  -@dangerous
+user admin  on  >admin_password   ~*  &*  +@all

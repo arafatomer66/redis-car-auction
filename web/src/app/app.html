@@ -1,0 +1,26 @@
+<main class="shell">
+  <header>
+    <h1>🚗 Redis Car Auction</h1>
+    <p class="tagline">Live bidding on cars — powered by Redis Hashes, Streams, Pub/Sub, Lua &amp; more.</p>
+    <div class="user-switch">
+      <label>You are:</label>
+      <select [value]="currentUser()" (change)="switchUser($any($event.target).value)">
+        <option value="demo-alice">Alice</option>
+        <option value="demo-bob">Bob</option>
+        <option value="demo-carol">Carol</option>
+      </select>
+    </div>
+  </header>
+
+  @if (health(); as h) {
+    <div class="health-bar">
+      <span class="dot" [class.ok]="h.redis === 'ok'"></span> Redis
+      <span class="dot" [class.ok]="h.db === 'ok'"></span> Postgres
+      <span class="up">up {{ h.uptime | number: '1.0-0' }}s</span>
+    </div>
+  } @else if (error()) {
+    <p class="error">⚠ {{ error() }}</p>
+  }
+
+  <router-outlet />
+</main>

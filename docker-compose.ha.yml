@@ -1,0 +1,64 @@
+# HA / production profiles. Run alongside the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.ha.yml --profile replica up -d
+#   docker compose -f docker-compose.yml -f docker-compose.ha.yml --profile sentinel up -d
+#   docker compose -f docker-compose.cluster.yml up -d   # cluster mode is separate (different topology)
+#   docker compose -f docker-compose.yml -f docker-compose.ha.yml --profile stack up -d
+
+services:
+  # --- Phase 18: Replication ----------------------------------------------
+  redis-replica:
+    profiles: ["replica", "sentinel"]
+    image: redis:7-alpine
+    container_name: redis-auction-replica
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["redis-server", "--replicaof", "redis", "6379", "--appendonly", "yes"]
+    ports:
+      - "6384:6379"
+
+  # --- Phase 18: Sentinel (3-node quorum) ---------------------------------
+  sentinel-1:
+    profiles: ["sentinel"]
+    image: redis:7-alpine
+    container_name: redis-auction-sentinel-1
+    depends_on:
+      redis-replica:
+        condition: service_started
+    volumes:
+      - ./ops/sentinel/sentinel.conf:/etc/sentinel.conf
+    command: ["redis-sentinel", "/etc/sentinel.conf"]
+    ports: ["26379:26379"]
+
+  sentinel-2:
+    profiles: ["sentinel"]
+    image: redis:7-alpine
+    container_name: redis-auction-sentinel-2
+    depends_on:
+      redis-replica:
+        condition: service_started
+    volumes:
+      - ./ops/sentinel/sentinel.conf:/etc/sentinel.conf
+    command: ["redis-sentinel", "/etc/sentinel.conf"]
+    ports: ["26380:26379"]
+
+  sentinel-3:
+    profiles: ["sentinel"]
+    image: redis:7-alpine
+    container_name: redis-auction-sentinel-3
+    depends_on:
+      redis-replica:
+        condition: service_started
+    volumes:
+      - ./ops/sentinel/sentinel.conf:/etc/sentinel.conf
+    command: ["redis-sentinel", "/etc/sentinel.conf"]
+    ports: ["26381:26379"]
+
+  # --- Phase 19: RedisJSON + RediSearch via redis-stack -------------------
+  redis-stack:
+    profiles: ["stack"]
+    image: redis/redis-stack-server:latest
+    container_name: redis-auction-stack
+    ports: ["6385:6379"]
+    environment:
+      REDIS_ARGS: "--notify-keyspace-events Ex --appendonly yes"
